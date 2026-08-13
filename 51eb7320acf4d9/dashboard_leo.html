@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Broadcast Radar — Leo</title>
+  <style>
+    :root {
+      --bg: #edf4fb;
+      --panel: rgba(255,255,255,0.92);
+      --ink: #10233f;
+      --muted: #66758b;
+      --border: rgba(148,163,184,.25);
+      --shadow: 0 24px 70px rgba(15,23,42,.10);
+      --blue: #0f62fe;
+      --green: #15803d;
+      --green-soft: #dcfce7;
+      --amber: #a16207;
+      --amber-soft: #fef3c7;
+      --red: #b42318;
+      --red-soft: #fee4e2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(15,98,254,.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(15,157,146,.14), transparent 22%),
+        linear-gradient(180deg, #f9fbff 0%, var(--bg) 100%);
+    }
+    .wrap { max-width: 1680px; margin: 0 auto; padding: 34px 24px 64px; }
+    .hero { display: grid; grid-template-columns: 1.35fr .8fr; gap: 20px; margin-bottom: 28px; }
+    .hero-main, .hero-side, .country {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .hero-main { padding: 28px 30px; background: linear-gradient(135deg, rgba(15,98,254,.08), rgba(15,157,146,.08)), var(--panel); }
+    h1 { margin: 0; font-size: 44px; letter-spacing: -.04em; }
+    .hero p { margin: 10px 0 0; color: var(--muted); max-width: 760px; line-height: 1.55; }
+    .hero-kpis { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 14px; margin-top: 24px; }
+    .hero-kpi { padding: 16px 18px; border-radius: 20px; border: 1px solid var(--border); background: rgba(255,255,255,.72); }
+    .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .hero-kpi .value { margin-top: 8px; font-size: 28px; font-weight: 800; }
+    .hero-side { padding: 24px 26px; display: grid; gap: 14px; align-content: center; }
+    .hero-side .value { font-size: 18px; font-weight: 700; }
+    .hero-side .sub { color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .countries { display: grid; grid-template-columns: 1fr; gap: 22px; }
+    .country-head { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: end; padding: 24px 26px 18px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(235,245,255,.95)); }
+    .country-head h2 { margin: 0 0 8px; font-size: 30px; letter-spacing: -.02em; }
+    .meta { display: flex; flex-wrap: wrap; gap: 10px 16px; color: var(--muted); font-size: 13px; }
+    .country-badge { display: inline-flex; align-items: center; padding: 9px 14px; border-radius: 999px; font-weight: 700; font-size: 12px; background: var(--green-soft); color: var(--green); white-space: nowrap; }
+    .country-badge.error { background: var(--red-soft); color: var(--red); }
+    .metrics { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 14px; padding: 20px 24px 10px; }
+    .metric { padding: 16px 18px; border-radius: 20px; border: 1px solid var(--border); background: linear-gradient(180deg, #fff, #f9fbff); }
+    .metric .value { margin-top: 8px; font-size: 28px; font-weight: 800; }
+    .metric .detail { margin-top: 6px; color: var(--muted); font-size: 12px; }
+    .error-box { margin: 0 24px 22px; padding: 16px 18px; border-radius: 18px; background: var(--red-soft); color: var(--red); border: 1px solid #fecdca; font-size: 14px; font-weight: 600; }
+    .section-title { padding: 10px 24px 0; font-size: 18px; font-weight: 800; }
+    .section-sub { padding: 4px 24px 0; color: var(--muted); font-size: 13px; }
+    .alert-grid { display: grid; gap: 12px; padding: 14px 24px 10px; }
+    .alert-box { border: 1px solid #fecdca; background: linear-gradient(180deg, #fff6f5, #fff0ef); color: var(--red); border-radius: 18px; padding: 14px 16px; }
+    .alert-box strong { display: block; margin-bottom: 6px; }
+    .table-wrap { padding: 10px 18px 20px; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 1080px; }
+    th { text-align: left; font-size: 12px; color: var(--muted); padding: 12px 10px; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: .06em; }
+    td { padding: 14px 10px; border-bottom: 1px solid #edf2f7; vertical-align: top; font-size: 14px; }
+    tr:last-child td { border-bottom: none; }
+    .id-chip { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; background: #eef4ff; color: var(--blue); font-weight: 700; font-size: 12px; }
+    .campaign { font-weight: 700; margin-bottom: 4px; }
+    .sub { color: var(--muted); font-size: 12px; }
+    .status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; }
+    .status.concluido { background: var(--green-soft); color: var(--green); }
+    .status.pendente { background: var(--amber-soft); color: var(--amber); }
+    .status.outro { background: #e8eef8; color: #26447a; }
+    .kind { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; }
+    .kind.normal { background: #eef4ff; color: var(--blue); }
+    .kind.agrupado { background: #ecfeff; color: #0f766e; }
+    .progress { font-weight: 700; }
+    .muted { color: var(--muted); }
+    @media (max-width: 1200px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .country-head { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .wrap { padding: 18px 14px 40px; }
+      h1 { font-size: 32px; }
+      .hero-kpis, .metrics { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-main">
+        <h1>Broadcast Radar — Leo</h1>
+        <p>Painel operacional dos broadcasts e do relatório de envios por país. Feito para bater o olho em fila, conclusão, falhas, horários agrupados e quedas bruscas sem abrir cada login manualmente.</p>
+        <div class="hero-kpis" id="hero-kpis"></div>
+      </div>
+      <div class="hero-side">
+        <div class="label">Última coleta</div>
+        <div class="value" id="last-run">-</div>
+        <div class="sub">Quando uma página cai forte de um horário para o outro, o alerta aparece direto no card do país para acelerar a conferência.</div>
+      </div>
+    </section>
+    <section class="countries" id="countries"></section>
+  </div>
+  <script>
+    const data = [{"pais": "Eua", "projeto": "leo", "email": "eua_emprestimo_rafael_leo@chat.multchat.chat", "coletado_em": "2026-08-13T15:07:36.625778", "cards": {}, "historico": [{"id": "#269617", "campanha": "EUA-LOAN-5000-LOCKED-2", "tipo": "AUTO", "pagina": "+22", "pagina_detalhe": "Várias páginas", "status": "PENDENTE", "progresso": "0 envios 0 falhas", "entregabilidade": "0%", "percentual": "-", "agendado_br": "13/08/2026 21:01 BRT", "duracao": "-"}, {"id": "#267542", "campanha": "EUA-LOAN-GUARANTEED-1", "tipo": "AUTO", "pagina": "+22", "pagina_detalhe": "Várias páginas", "status": "PENDENTE", "progresso": "0 envios 0 falhas", "entregabilidade": "0%", "percentual": "-", "agendado_br": "13/08/2026 17:01 BRT", "duracao": "-"}, {"id": "#265436", "campanha": "EUA-LOAN-PRIORITY-ACCESS-3", "tipo": "AUTO", "pagina": "+22", "pagina_detalhe": "Várias páginas", "status": "CONCLUÍDO", "progresso": "678 envios 11 falhas", "entregabilidade": "100%", "percentual": "-", "agendado_br": "13/08/2026 14:01 BRT", "duracao": "41s"}, {"id": "#263896", "campanha": "EUA-LOAN-CONFIRMED-APPROVAL-1", "tipo": "AUTO", "pagina": "+22", "pagina_detalhe": "Várias páginas", "status": "CONCLUÍDO", "progresso": "697 envios 9 falhas", "entregabilidade": "100%", "percentual": "-", "agendado_br": "13/08/2026 11:01 BRT", "duracao": "49s"}, {"id": "#262839", "campanha": "EUA-LOAN-EXPIRES-SOON-2", "tipo": "AUTO", "pagina": "+22", "pagina_detalhe": "Várias páginas", "status": "CONCLUÍDO", "progresso": "709 envios 27 falhas", "entregabilidade": "100%", "percentual": "-", "agendado_br": "13/08/2026 08:01 BRT", "duracao": "1m 20s"}], "relatorio_envios": [{"id": "#535706", "campanha": "Auto: moura2_teste_04 Template: moura2_teste_04", "pagina": "Alyssa Grant", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 12, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535709", "campanha": "Auto: joao_teste_10 Template: joao_teste_10", "pagina": "Chloe Denham", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 3, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535708", "campanha": "Auto: new3_link_status_29 Template: new3_link_status_29", "pagina": "Tahlia Whitmore", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 56, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535707", "campanha": "Auto: moura2_teste_14 Template: moura2_teste_14", "pagina": "Hailey Ross", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 25, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535694", "campanha": "Auto: joao_teste_20 Template: joao_teste_20", "pagina": "Charlotte Reed", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 374, "falhas": 2, "status": "CONCLUÍDO"}, {"id": "#535696", "campanha": "Auto: moura_teste_43 Template: moura_teste_43", "pagina": "Amelia Roberts", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 303, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535699", "campanha": "Auto: moura_teste_46 Template: moura_teste_46", "pagina": "Sophie Turner", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 293, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#535692", "campanha": "Auto: moura2_teste_04 Template: moura2_teste_04", "pagina": "Claire Foster", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 281, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#535693", "campanha": "Auto: one_bttn_391fsd Template: one_bttn_391fsd", "pagina": "Ellie Barnes", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 17, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535702", "campanha": "Auto: new3_link_status_16 Template: new3_link_status_16", "pagina": "Eliza Morton", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 51, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535691", "campanha": "Auto: one_bttn_481fsd Template: one_bttn_481fsd", "pagina": "Sarah Reed", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 1, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535703", "campanha": "Auto: joao_teste_23 Template: joao_teste_23", "pagina": "Amelia Hartwell", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 14, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535700", "campanha": "Auto: moura2_teste_10 Template: moura2_teste_10", "pagina": "Clara Winslow", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 11, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535705", "campanha": "Auto: new3_link_status_7 Template: new3_link_status_7", "pagina": "Megan Collins", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 53, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535701", "campanha": "Auto: one_bttn_301fsd Template: one_bttn_301fsd", "pagina": "Mia Prescott", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 33, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535704", "campanha": "Auto: moura2_teste_04 Template: moura2_teste_04", "pagina": "Judith Bennet", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 3, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535695", "campanha": "Auto: joao_teste_02 Template: joao_teste_02", "pagina": "Harper Wilson", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 525, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535698", "campanha": "Auto: one_bttn_321fsd Template: one_bttn_321fsd", "pagina": "Madeline James", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 16, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#535697", "campanha": "Auto: new3_link_status_24 Template: new3_link_status_24", "pagina": "Layla Price", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 172, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535689", "campanha": "Auto: one_bttn_311fsd Template: one_bttn_311fsd", "pagina": "Nora Watson", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 2, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535690", "campanha": "Auto: moura2_teste_09 Template: moura2_teste_09", "pagina": "Olivia Hayes", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 336, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#535688", "campanha": "Auto: moura_teste_43 Template: moura_teste_43", "pagina": "Emma Clarke", "data_hora": "13/08/2026 12:00 BRT", "sucessos": 150, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534955", "campanha": "Auto: moura2_teste_12 Template: moura2_teste_12", "pagina": "Chloe Denham", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 3, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534954", "campanha": "Auto: moura_teste_43 Template: moura_teste_43", "pagina": "Tahlia Whitmore", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 56, "falhas": 2, "status": "CONCLUÍDO"}, {"id": "#534949", "campanha": "Auto: joao_teste_14 Template: joao_teste_14", "pagina": "Amelia Hartwell", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 14, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534952", "campanha": "Auto: new3_link_status_2 Template: new3_link_status_2", "pagina": "Alyssa Grant", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 12, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534946", "campanha": "Auto: new3_link_status_20 Template: new3_link_status_20", "pagina": "Clara Winslow", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 11, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534948", "campanha": "Auto: moura2_teste_07 Template: moura2_teste_07", "pagina": "Eliza Morton", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 51, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534947", "campanha": "Auto: new3_link_status_19 Template: new3_link_status_19", "pagina": "Mia Prescott", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 33, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534953", "campanha": "Auto: joao_teste_14 Template: joao_teste_14", "pagina": "Hailey Ross", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 25, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534944", "campanha": "Auto: moura_teste_40 Template: moura_teste_40", "pagina": "Madeline James", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 17, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534942", "campanha": "Auto: new3_link_status_24 Template: new3_link_status_24", "pagina": "Amelia Roberts", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 303, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534945", "campanha": "Auto: new3_link_status_8 Template: new3_link_status_8", "pagina": "Sophie Turner", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 294, "falhas": 3, "status": "CONCLUÍDO"}, {"id": "#534934", "campanha": "Auto: new3_link_status_16 Template: new3_link_status_16", "pagina": "Emma Clarke", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 150, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534938", "campanha": "Auto: moura2_teste_07 Template: moura2_teste_07", "pagina": "Claire Foster", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 286, "falhas": 3, "status": "CONCLUÍDO"}, {"id": "#534939", "campanha": "Auto: new3_link_status_18 Template: new3_link_status_18", "pagina": "Ellie Barnes", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 17, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534937", "campanha": "Auto: moura2_teste_08 Template: moura2_teste_08", "pagina": "Sarah Reed", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 1, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534935", "campanha": "Auto: moura_teste_34 Template: moura_teste_34", "pagina": "Nora Watson", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 2, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534940", "campanha": "Auto: one_bttn_461fsd Template: one_bttn_461fsd", "pagina": "Charlotte Reed", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 374, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534936", "campanha": "Auto: one_bttn_431fsd Template: one_bttn_431fsd", "pagina": "Olivia Hayes", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 339, "falhas": 2, "status": "CONCLUÍDO"}, {"id": "#534941", "campanha": "Auto: new3_link_status_18 Template: new3_link_status_18", "pagina": "Harper Wilson", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 525, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#534943", "campanha": "Auto: new3_link_status_20 Template: new3_link_status_20", "pagina": "Layla Price", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 172, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534951", "campanha": "Auto: one_bttn_371fsd Template: one_bttn_371fsd", "pagina": "Megan Collins", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 53, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534950", "campanha": "Auto: new3_link_status_26 Template: new3_link_status_26", "pagina": "Judith Bennet", "data_hora": "13/08/2026 10:00 BRT", "sucessos": 3, "falhas": 0, "status": "CONCLUÍDO"}], "relatorio_agrupado": [{"data_hora": "13/08/2026 12:00 BRT", "data_hora_iso": "2026-08-13T12:00:00", "campanhas": "Auto: moura2_teste_04 Template: moura2_teste_04 | Auto: joao_teste_10 Template: joao_teste_10 | Auto: new3_link_status_29 Template: new3_link_status_29 | Auto: moura2_teste_14 Template: moura2_teste_14 | Auto: joao_teste_20 Template: joao_teste_20 | Auto: moura_teste_43 Template: moura_teste_43 | Auto: moura_teste_46 Template: moura_teste_46 | Auto: one_bttn_391fsd Template: one_bttn_391fsd | Auto: new3_link_status_16 Template: new3_link_status_16 | Auto: one_bttn_481fsd Template: one_bttn_481fsd | Auto: joao_teste_23 Template: joao_teste_23 | Auto: moura2_teste_10 Template: moura2_teste_10 | Auto: new3_link_status_7 Template: new3_link_status_7 | Auto: one_bttn_301fsd Template: one_bttn_301fsd | Auto: joao_teste_02 Template: joao_teste_02 | Auto: one_bttn_321fsd Template: one_bttn_321fsd | Auto: new3_link_status_24 Template: new3_link_status_24 | Auto: one_bttn_311fsd Template: one_bttn_311fsd | Auto: moura2_teste_09 Template: moura2_teste_09", "paginas": "Alyssa Grant | Chloe Denham | Tahlia Whitmore | Hailey Ross | Charlotte Reed | Amelia Roberts | Sophie Turner | Claire Foster | Ellie Barnes | Eliza Morton | Sarah Reed | Amelia Hartwell | Clara Winslow | Megan Collins | Mia Prescott | Judith Bennet | Harper Wilson | Madeline James | Layla Price | Nora Watson | Olivia Hayes | Emma Clarke", "total_paginas": 22, "sucessos": 2731, "falhas": 6, "status": "CONCLUÍDO", "ids": "#535706, #535709, #535708, #535707, #535694, #535696, #535699, #535692"}, {"data_hora": "13/08/2026 10:00 BRT", "data_hora_iso": "2026-08-13T10:00:00", "campanhas": "Auto: moura2_teste_12 Template: moura2_teste_12 | Auto: moura_teste_43 Template: moura_teste_43 | Auto: joao_teste_14 Template: joao_teste_14 | Auto: new3_link_status_2 Template: new3_link_status_2 | Auto: new3_link_status_20 Template: new3_link_status_20 | Auto: moura2_teste_07 Template: moura2_teste_07 | Auto: new3_link_status_19 Template: new3_link_status_19 | Auto: moura_teste_40 Template: moura_teste_40 | Auto: new3_link_status_24 Template: new3_link_status_24 | Auto: new3_link_status_8 Template: new3_link_status_8 | Auto: new3_link_status_16 Template: new3_link_status_16 | Auto: new3_link_status_18 Template: new3_link_status_18 | Auto: moura2_teste_08 Template: moura2_teste_08 | Auto: moura_teste_34 Template: moura_teste_34 | Auto: one_bttn_461fsd Template: one_bttn_461fsd | Auto: one_bttn_431fsd Template: one_bttn_431fsd | Auto: one_bttn_371fsd Template: one_bttn_371fsd | Auto: new3_link_status_26 Template: new3_link_status_26", "paginas": "Chloe Denham | Tahlia Whitmore | Amelia Hartwell | Alyssa Grant | Clara Winslow | Eliza Morton | Mia Prescott | Hailey Ross | Madeline James | Amelia Roberts | Sophie Turner | Emma Clarke | Claire Foster | Ellie Barnes | Sarah Reed | Nora Watson | Charlotte Reed | Olivia Hayes | Harper Wilson | Layla Price | Megan Collins | Judith Bennet", "total_paginas": 22, "sucessos": 2741, "falhas": 11, "status": "CONCLUÍDO", "ids": "#534955, #534954, #534949, #534952, #534946, #534948, #534947, #534953"}], "alertas_queda": []}, {"pais": "Italia", "projeto": "leo", "email": "italia_emprestimo_rafael_leo@chat.multchat.chat", "coletado_em": "2026-08-13T15:07:51.239395", "cards": {}, "historico": [{"id": "#266689", "campanha": "IT-LOAN-READY-23", "tipo": "AUTO", "pagina": "+12", "pagina_detalhe": "Várias páginas", "status": "PENDENTE", "progresso": "0 envios 0 falhas", "entregabilidade": "0%", "percentual": "-", "agendado_br": "13/08/2026 16:07 BRT", "duracao": "-"}, {"id": "#265629", "campanha": "IT-LOAN-APPROVED-17", "tipo": "AUTO", "pagina": "+12", "pagina_detalhe": "Várias páginas", "status": "CONCLUÍDO", "progresso": "301 envios 5 falhas", "entregabilidade": "100%", "percentual": "-", "agendado_br": "13/08/2026 14:07 BRT", "duracao": "1m 10s"}, {"id": "#264099", "campanha": "IT-LOAN-AVAILABLE-5", "tipo": "AUTO", "pagina": "+12", "pagina_detalhe": "Várias páginas", "status": "CONCLUÍDO", "progresso": "310 envios 4 falhas", "entregabilidade": "100%", "percentual": "-", "agendado_br": "13/08/2026 11:07 BRT", "duracao": "1m 24s"}, {"id": "#263042", "campanha": "IT-LOAN-READY-22", "tipo": "AUTO", "pagina": "+12", "pagina_detalhe": "Várias páginas", "status": "CONCLUÍDO", "progresso": "312 envios 3 falhas", "entregabilidade": "100%", "percentual": "-", "agendado_br": "13/08/2026 08:07 BRT", "duracao": "35s"}, {"id": "#261700", "campanha": "IT-LOAN-APPROVED-3", "tipo": "AUTO", "pagina": "+12", "pagina_detalhe": "Várias páginas", "status": "CONCLUÍDO", "progresso": "309 envios 1 falhas", "entregabilidade": "100%", "percentual": "-", "agendado_br": "13/08/2026 05:07 BRT", "duracao": "1m 2s"}], "relatorio_envios": [{"id": "#537060", "campanha": "Auto: moura2_teste_28_it Template: moura2_teste_28_it", "pagina": "Federica Grassi", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537055", "campanha": "Auto: one_bttn_491541 Template: one_bttn_491541", "pagina": "Greta Santoro", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537061", "campanha": "Auto: one_bttn_351541 Template: one_bttn_351541", "pagina": "Serena Messina", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537058", "campanha": "Auto: joao_teste_04_it Template: joao_teste_04_it", "pagina": "Gabriella Nobile", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537059", "campanha": "Auto: one_bttn_391541 Template: one_bttn_391541", "pagina": "Jeanne David", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537056", "campanha": "Auto: moura2_teste_28_it Template: moura2_teste_28_it", "pagina": "Laure Gaillard", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537064", "campanha": "Auto: joao_teste_20_it Template: joao_teste_20_it", "pagina": "Emma Romano", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537054", "campanha": "Auto: moura2_teste_17_it Template: moura2_teste_17_it", "pagina": "Chiara Bellini", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537057", "campanha": "Auto: moura_teste_40_it Template: moura_teste_40_it", "pagina": "Martina Rinaldi", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537062", "campanha": "Auto: new3_link_status_24_it Template: new3_link_status_24_it", "pagina": "Emanuela Sartori", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537053", "campanha": "Auto: one_bttn_501541 Template: one_bttn_501541", "pagina": "Alessia Romano", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#537063", "campanha": "Auto: moura2_teste_02_it Template: moura2_teste_02_it", "pagina": "Veronica Rossetti", "data_hora": "13/08/2026 15:03 BRT", "sucessos": 0, "falhas": 0, "status": "PENDENTE"}, {"id": "#535723", "campanha": "Auto: one_bttn_321541 Template: one_bttn_321541", "pagina": "Martina Rinaldi", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 82, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535725", "campanha": "Auto: joao_teste_18_it Template: joao_teste_18_it", "pagina": "Jeanne David", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 227, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#535729", "campanha": "Auto: moura_teste_33_it Template: moura_teste_33_it", "pagina": "Veronica Rossetti", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 17, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535728", "campanha": "Auto: new3_link_status_28_it Template: new3_link_status_28_it", "pagina": "Emanuela Sartori", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 43, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535727", "campanha": "Auto: moura2_teste_14_it Template: moura2_teste_14_it", "pagina": "Serena Messina", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 14, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535724", "campanha": "Auto: new3_link_status_15_it Template: new3_link_status_15_it", "pagina": "Gabriella Nobile", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 145, "falhas": 3, "status": "CONCLUÍDO"}, {"id": "#535721", "campanha": "Auto: moura_teste_33_it Template: moura_teste_33_it", "pagina": "Greta Santoro", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 67, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535722", "campanha": "Auto: moura2_teste_05_it Template: moura2_teste_05_it", "pagina": "Laure Gaillard", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 4, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535730", "campanha": "Auto: moura_teste_31_it Template: moura_teste_31_it", "pagina": "Emma Romano", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 109, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535720", "campanha": "Auto: moura2_teste_20_it Template: moura2_teste_20_it", "pagina": "Chiara Bellini", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 120, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535726", "campanha": "Auto: new3_link_status_21_it Template: new3_link_status_21_it", "pagina": "Federica Grassi", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 25, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#535719", "campanha": "Auto: one_bttn_411541 Template: one_bttn_411541", "pagina": "Alessia Romano", "data_hora": "13/08/2026 12:03 BRT", "sucessos": 259, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534180", "campanha": "Auto: one_bttn_461541 Template: one_bttn_461541", "pagina": "Gabriella Nobile", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 144, "falhas": 4, "status": "CONCLUÍDO"}, {"id": "#534186", "campanha": "Auto: new3_link_status_13_it Template: new3_link_status_13_it", "pagina": "Emma Romano", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 109, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#534181", "campanha": "Auto: one_bttn_311541 Template: one_bttn_311541", "pagina": "Jeanne David", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 225, "falhas": 2, "status": "CONCLUÍDO"}, {"id": "#534182", "campanha": "Auto: moura2_teste_20_it Template: moura2_teste_20_it", "pagina": "Federica Grassi", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 25, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534175", "campanha": "Auto: moura2_teste_26_it Template: moura2_teste_26_it", "pagina": "Alessia Romano", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 260, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#534185", "campanha": "Auto: moura2_teste_01_it Template: moura2_teste_01_it", "pagina": "Veronica Rossetti", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 17, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534176", "campanha": "Auto: moura2_teste_10_it Template: moura2_teste_10_it", "pagina": "Chiara Bellini", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 120, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#534179", "campanha": "Auto: new3_link_status_8_it Template: new3_link_status_8_it", "pagina": "Martina Rinaldi", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 82, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534183", "campanha": "Auto: moura2_teste_16_it Template: moura2_teste_16_it", "pagina": "Serena Messina", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 14, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534184", "campanha": "Auto: one_bttn_291541 Template: one_bttn_291541", "pagina": "Emanuela Sartori", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 43, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#534177", "campanha": "Auto: moura_teste_31_it Template: moura_teste_31_it", "pagina": "Greta Santoro", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 67, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#534178", "campanha": "Auto: moura_teste_44_it Template: moura_teste_44_it", "pagina": "Laure Gaillard", "data_hora": "13/08/2026 07:03 BRT", "sucessos": 4, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533512", "campanha": "Auto: one_bttn_241541 Template: one_bttn_241541", "pagina": "Serena Messina", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 14, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533504", "campanha": "Auto: one_bttn_231541 Template: one_bttn_231541", "pagina": "Alessia Romano", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 259, "falhas": 2, "status": "CONCLUÍDO"}, {"id": "#533505", "campanha": "Auto: moura_teste_36_it Template: moura_teste_36_it", "pagina": "Chiara Bellini", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 121, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#533511", "campanha": "Auto: moura2_teste_14_it Template: moura2_teste_14_it", "pagina": "Federica Grassi", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 25, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533507", "campanha": "Auto: one_bttn_421541 Template: one_bttn_421541", "pagina": "Laure Gaillard", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 4, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533506", "campanha": "Auto: one_bttn_291541 Template: one_bttn_291541", "pagina": "Greta Santoro", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 68, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#533515", "campanha": "Auto: moura2_teste_10_it Template: moura2_teste_10_it", "pagina": "Emma Romano", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 110, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533509", "campanha": "Auto: one_bttn_391541 Template: one_bttn_391541", "pagina": "Gabriella Nobile", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 142, "falhas": 6, "status": "CONCLUÍDO"}, {"id": "#533508", "campanha": "Auto: moura2_teste_06_it Template: moura2_teste_06_it", "pagina": "Martina Rinaldi", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 82, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533514", "campanha": "Auto: moura2_teste_12_it Template: moura2_teste_12_it", "pagina": "Veronica Rossetti", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 17, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533510", "campanha": "Auto: new3_link_status_17_it Template: new3_link_status_17_it", "pagina": "Jeanne David", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 219, "falhas": 3, "status": "CONCLUÍDO"}, {"id": "#533513", "campanha": "Auto: new3_link_status_27_it Template: new3_link_status_27_it", "pagina": "Emanuela Sartori", "data_hora": "13/08/2026 04:03 BRT", "sucessos": 44, "falhas": 0, "status": "CONCLUÍDO"}], "relatorio_agrupado": [{"data_hora": "13/08/2026 15:03 BRT", "data_hora_iso": "2026-08-13T15:03:00", "campanhas": "Auto: moura2_teste_28_it Template: moura2_teste_28_it | Auto: one_bttn_491541 Template: one_bttn_491541 | Auto: one_bttn_351541 Template: one_bttn_351541 | Auto: joao_teste_04_it Template: joao_teste_04_it | Auto: one_bttn_391541 Template: one_bttn_391541 | Auto: joao_teste_20_it Template: joao_teste_20_it | Auto: moura2_teste_17_it Template: moura2_teste_17_it | Auto: moura_teste_40_it Template: moura_teste_40_it | Auto: new3_link_status_24_it Template: new3_link_status_24_it | Auto: one_bttn_501541 Template: one_bttn_501541 | Auto: moura2_teste_02_it Template: moura2_teste_02_it", "paginas": "Federica Grassi | Greta Santoro | Serena Messina | Gabriella Nobile | Jeanne David | Laure Gaillard | Emma Romano | Chiara Bellini | Martina Rinaldi | Emanuela Sartori | Alessia Romano | Veronica Rossetti", "total_paginas": 12, "sucessos": 0, "falhas": 0, "status": "PENDENTE", "ids": "#537060, #537055, #537061, #537058, #537059, #537056, #537064, #537054"}, {"data_hora": "13/08/2026 12:03 BRT", "data_hora_iso": "2026-08-13T12:03:00", "campanhas": "Auto: one_bttn_321541 Template: one_bttn_321541 | Auto: joao_teste_18_it Template: joao_teste_18_it | Auto: moura_teste_33_it Template: moura_teste_33_it | Auto: new3_link_status_28_it Template: new3_link_status_28_it | Auto: moura2_teste_14_it Template: moura2_teste_14_it | Auto: new3_link_status_15_it Template: new3_link_status_15_it | Auto: moura2_teste_05_it Template: moura2_teste_05_it | Auto: moura_teste_31_it Template: moura_teste_31_it | Auto: moura2_teste_20_it Template: moura2_teste_20_it | Auto: new3_link_status_21_it Template: new3_link_status_21_it | Auto: one_bttn_411541 Template: one_bttn_411541", "paginas": "Martina Rinaldi | Jeanne David | Veronica Rossetti | Emanuela Sartori | Serena Messina | Gabriella Nobile | Greta Santoro | Laure Gaillard | Emma Romano | Chiara Bellini | Federica Grassi | Alessia Romano", "total_paginas": 12, "sucessos": 1112, "falhas": 4, "status": "CONCLUÍDO", "ids": "#535723, #535725, #535729, #535728, #535727, #535724, #535721, #535722"}, {"data_hora": "13/08/2026 07:03 BRT", "data_hora_iso": "2026-08-13T07:03:00", "campanhas": "Auto: one_bttn_461541 Template: one_bttn_461541 | Auto: new3_link_status_13_it Template: new3_link_status_13_it | Auto: one_bttn_311541 Template: one_bttn_311541 | Auto: moura2_teste_20_it Template: moura2_teste_20_it | Auto: moura2_teste_26_it Template: moura2_teste_26_it | Auto: moura2_teste_01_it Template: moura2_teste_01_it | Auto: moura2_teste_10_it Template: moura2_teste_10_it | Auto: new3_link_status_8_it Template: new3_link_status_8_it | Auto: moura2_teste_16_it Template: moura2_teste_16_it | Auto: one_bttn_291541 Template: one_bttn_291541 | Auto: moura_teste_31_it Template: moura_teste_31_it | Auto: moura_teste_44_it Template: moura_teste_44_it", "paginas": "Gabriella Nobile | Emma Romano | Jeanne David | Federica Grassi | Alessia Romano | Veronica Rossetti | Chiara Bellini | Martina Rinaldi | Serena Messina | Emanuela Sartori | Greta Santoro | Laure Gaillard", "total_paginas": 12, "sucessos": 1110, "falhas": 11, "status": "CONCLUÍDO", "ids": "#534180, #534186, #534181, #534182, #534175, #534185, #534176, #534179"}, {"data_hora": "13/08/2026 04:03 BRT", "data_hora_iso": "2026-08-13T04:03:00", "campanhas": "Auto: one_bttn_241541 Template: one_bttn_241541 | Auto: one_bttn_231541 Template: one_bttn_231541 | Auto: moura_teste_36_it Template: moura_teste_36_it | Auto: moura2_teste_14_it Template: moura2_teste_14_it | Auto: one_bttn_421541 Template: one_bttn_421541 | Auto: one_bttn_291541 Template: one_bttn_291541 | Auto: moura2_teste_10_it Template: moura2_teste_10_it | Auto: one_bttn_391541 Template: one_bttn_391541 | Auto: moura2_teste_06_it Template: moura2_teste_06_it | Auto: moura2_teste_12_it Template: moura2_teste_12_it | Auto: new3_link_status_17_it Template: new3_link_status_17_it | Auto: new3_link_status_27_it Template: new3_link_status_27_it", "paginas": "Serena Messina | Alessia Romano | Chiara Bellini | Federica Grassi | Laure Gaillard | Greta Santoro | Emma Romano | Gabriella Nobile | Martina Rinaldi | Veronica Rossetti | Jeanne David | Emanuela Sartori", "total_paginas": 12, "sucessos": 1105, "falhas": 13, "status": "CONCLUÍDO", "ids": "#533512, #533504, #533505, #533511, #533507, #533506, #533515, #533509"}], "alertas_queda": [{"origem": "agrupado", "tipo_alerta": "queda_sucessos", "pagina": "Agrupado 13/08/2026 15:03 BRT", "data_hora_anterior": "13/08/2026 12:03 BRT", "sucessos_anterior": 1112, "data_hora_atual": "13/08/2026 15:03 BRT", "sucessos_atual": 0, "falhas_atual": 0, "queda_absoluta": 1112, "queda_percentual": 100.0, "campanhas": "Auto: moura2_teste_28_it Template: moura2_teste_28_it | Auto: one_bttn_491541 Template: one_bttn_491541 | Auto: one_bttn_351541 Template: one_bttn_351541 | Auto: joao_teste_04_it Template: joao_teste_04_it | Auto: one_bttn_391541 Template: one_bttn_391541 | Auto: joao_teste_20_it Template: joao_teste_20_it | Auto: moura2_teste_17_it Template: moura2_teste_17_it | Auto: moura_teste_40_it Template: moura_teste_40_it | Auto: new3_link_status_24_it Template: new3_link_status_24_it | Auto: one_bttn_501541 Template: one_bttn_501541 | Auto: moura2_teste_02_it Template: moura2_teste_02_it", "total_paginas": 12, "ids": "#537060, #537055, #537061, #537058, #537059, #537056, #537064, #537054"}, {"pagina": "Alessia Romano", "data_hora_anterior": "13/08/2026 12:03 BRT", "sucessos_anterior": 259, "data_hora_atual": "13/08/2026 15:03 BRT", "sucessos_atual": 0, "falhas_atual": 0, "queda_absoluta": 259, "queda_percentual": 100.0}, {"pagina": "Jeanne David", "data_hora_anterior": "13/08/2026 12:03 BRT", "sucessos_anterior": 227, "data_hora_atual": "13/08/2026 15:03 BRT", "sucessos_atual": 0, "falhas_atual": 0, "queda_absoluta": 227, "queda_percentual": 100.0}, {"pagina": "Gabriella Nobile", "data_hora_anterior": "13/08/2026 12:03 BRT", "sucessos_anterior": 145, "data_hora_atual": "13/08/2026 15:03 BRT", "sucessos_atual": 0, "falhas_atual": 0, "queda_absoluta": 145, "queda_percentual": 100.0}, {"pagina": "Chiara Bellini", "data_hora_anterior": "13/08/2026 12:03 BRT", "sucessos_anterior": 120, "data_hora_atual": "13/08/2026 15:03 BRT", "sucessos_atual": 0, "falhas_atual": 0, "queda_absoluta": 120, "queda_percentual": 100.0}, {"pagina": "Emma Romano", "data_hora_anterior": "13/08/2026 12:03 BRT", "sucessos_anterior": 109, "data_hora_atual": "13/08/2026 15:03 BRT", "sucessos_atual": 0, "falhas_atual": 0, "queda_absoluta": 109, "queda_percentual": 100.0}, {"pagina": "Martina Rinaldi", "data_hora_anterior": "13/08/2026 12:03 BRT", "sucessos_anterior": 82, "data_hora_atual": "13/08/2026 15:03 BRT", "sucessos_atual": 0, "falhas_atual": 0, "queda_absoluta": 82, "queda_percentual": 100.0}, {"pagina": "Greta Santoro", "data_hora_anterior": "13/08/2026 12:03 BRT", "sucessos_anterior": 67, "data_hora_atual": "13/08/2026 15:03 BRT", "sucessos_atual": 0, "falhas_atual": 0, "queda_absoluta": 67, "queda_percentual": 100.0}, {"pagina": "Emanuela Sartori", "data_hora_anterior": "13/08/2026 12:03 BRT", "sucessos_anterior": 43, "data_hora_atual": "13/08/2026 15:03 BRT", "sucessos_atual": 0, "falhas_atual": 0, "queda_absoluta": 43, "queda_percentual": 100.0}, {"pagina": "Federica Grassi", "data_hora_anterior": "13/08/2026 12:03 BRT", "sucessos_anterior": 25, "data_hora_atual": "13/08/2026 15:03 BRT", "sucessos_atual": 0, "falhas_atual": 0, "queda_absoluta": 25, "queda_percentual": 100.0}]}, {"pais": "Nz", "projeto": "leo", "email": "nz_emprestimo_rafael_leo@chat.multchat.chat", "coletado_em": "2026-08-13T15:08:07.838256", "cards": {}, "historico": [{"id": "#270018", "campanha": "EUA-LOAN-SMALL-START-3", "tipo": "AUTO", "pagina": "+13", "pagina_detalhe": "Várias páginas", "status": "PENDENTE", "progresso": "0 envios 0 falhas", "entregabilidade": "0%", "percentual": "-", "agendado_br": "13/08/2026 23:07 BRT", "duracao": "-"}, {"id": "#269883", "campanha": "EUA-LOAN-INSTANT-APPROVAL-2", "tipo": "AUTO", "pagina": "+13", "pagina_detalhe": "Várias páginas", "status": "PENDENTE", "progresso": "0 envios 0 falhas", "entregabilidade": "0%", "percentual": "-", "agendado_br": "13/08/2026 21:07 BRT", "duracao": "-"}, {"id": "#268038", "campanha": "EUA-LOAN-VIP-APPROVAL-3", "tipo": "AUTO", "pagina": "+13", "pagina_detalhe": "Várias páginas", "status": "PENDENTE", "progresso": "0 envios 0 falhas", "entregabilidade": "0%", "percentual": "-", "agendado_br": "13/08/2026 18:07 BRT", "duracao": "-"}, {"id": "#261713", "campanha": "EUA-LOAN-CLOSING-TODAY-1", "tipo": "AUTO", "pagina": "+13", "pagina_detalhe": "Várias páginas", "status": "CONCLUÍDO", "progresso": "224 envios 1 falhas", "entregabilidade": "100%", "percentual": "-", "agendado_br": "13/08/2026 05:07 BRT", "duracao": "47s"}, {"id": "#260776", "campanha": "EUA-LOAN-SKIP-THE-LINE-1", "tipo": "AUTO", "pagina": "+13", "pagina_detalhe": "Várias páginas", "status": "CONCLUÍDO", "progresso": "232 envios 2 falhas", "entregabilidade": "100%", "percentual": "-", "agendado_br": "13/08/2026 02:07 BRT", "duracao": "21s"}], "relatorio_envios": [{"id": "#534082", "campanha": "Auto: one_bttn_46234 Template: one_bttn_46234", "pagina": "Faith Bell", "data_hora": "13/08/2026 06:00 BRT", "sucessos": 241, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#534083", "campanha": "Auto: new3_link_status_3 Template: new3_link_status_3", "pagina": "Emily Ward", "data_hora": "13/08/2026 06:00 BRT", "sucessos": 61, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534088", "campanha": "Auto: one_bttn_22234 Template: one_bttn_22234", "pagina": "Ivy Watson", "data_hora": "13/08/2026 06:00 BRT", "sucessos": 53, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534086", "campanha": "Auto: one_bttn_40234 Template: one_bttn_40234", "pagina": "Ruby Mitchell", "data_hora": "13/08/2026 06:00 BRT", "sucessos": 174, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534089", "campanha": "Auto: new3_link_status_13 Template: new3_link_status_13", "pagina": "Veronica Collins", "data_hora": "13/08/2026 06:00 BRT", "sucessos": 41, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534085", "campanha": "Auto: new3_link_status_25 Template: new3_link_status_25", "pagina": "Aria Murphy", "data_hora": "13/08/2026 06:00 BRT", "sucessos": 61, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#534087", "campanha": "Auto: moura_teste_42 Template: moura_teste_42", "pagina": "Ariana Ross", "data_hora": "13/08/2026 06:00 BRT", "sucessos": 80, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#534084", "campanha": "Auto: one_bttn_34234 Template: one_bttn_34234", "pagina": "Lucy Richardson", "data_hora": "13/08/2026 06:00 BRT", "sucessos": 130, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533314", "campanha": "Auto: one_bttn_49234 Template: one_bttn_49234", "pagina": "Emily Ward", "data_hora": "13/08/2026 03:00 BRT", "sucessos": 61, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533313", "campanha": "Auto: moura2_teste_17 Template: moura2_teste_17", "pagina": "Faith Bell", "data_hora": "13/08/2026 03:00 BRT", "sucessos": 241, "falhas": 2, "status": "CONCLUÍDO"}, {"id": "#533319", "campanha": "Auto: moura_teste_39 Template: moura_teste_39", "pagina": "Ivy Watson", "data_hora": "13/08/2026 03:00 BRT", "sucessos": 53, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533320", "campanha": "Auto: one_bttn_48234 Template: one_bttn_48234", "pagina": "Veronica Collins", "data_hora": "13/08/2026 03:00 BRT", "sucessos": 41, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533318", "campanha": "Auto: moura_teste_44 Template: moura_teste_44", "pagina": "Ariana Ross", "data_hora": "13/08/2026 03:00 BRT", "sucessos": 80, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#533315", "campanha": "Auto: moura2_teste_12 Template: moura2_teste_12", "pagina": "Lucy Richardson", "data_hora": "13/08/2026 03:00 BRT", "sucessos": 130, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533316", "campanha": "Auto: moura_teste_39 Template: moura_teste_39", "pagina": "Aria Murphy", "data_hora": "13/08/2026 03:00 BRT", "sucessos": 63, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533317", "campanha": "Auto: one_bttn_47234 Template: one_bttn_47234", "pagina": "Ruby Mitchell", "data_hora": "13/08/2026 03:00 BRT", "sucessos": 174, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533122", "campanha": "Auto: one_bttn_22234 Template: one_bttn_22234", "pagina": "Ariana Ross", "data_hora": "13/08/2026 00:00 BRT", "sucessos": 81, "falhas": 1, "status": "CONCLUÍDO"}, {"id": "#533124", "campanha": "Auto: moura_teste_34 Template: moura_teste_34", "pagina": "Veronica Collins", "data_hora": "13/08/2026 00:00 BRT", "sucessos": 41, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533123", "campanha": "Auto: new3_link_status_12 Template: new3_link_status_12", "pagina": "Ivy Watson", "data_hora": "13/08/2026 00:00 BRT", "sucessos": 53, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533121", "campanha": "Auto: one_bttn_47234 Template: one_bttn_47234", "pagina": "Ruby Mitchell", "data_hora": "13/08/2026 00:00 BRT", "sucessos": 174, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533119", "campanha": "Auto: joao_teste_10 Template: joao_teste_10", "pagina": "Lucy Richardson", "data_hora": "13/08/2026 00:00 BRT", "sucessos": 130, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533120", "campanha": "Auto: joao_teste_23 Template: joao_teste_23", "pagina": "Aria Murphy", "data_hora": "13/08/2026 00:00 BRT", "sucessos": 63, "falhas": 0, "status": "CONCLUÍDO"}, {"id": "#533117", "campanha": "Auto: moura_teste_31 Template: moura_teste_31", "pagina": "Faith Bell", "data_hora": "13/08/2026 00:00 BRT", "sucessos": 238, "falhas": 2, "status": "CONCLUÍDO"}, {"id": "#533118", "campanha": "Auto: one_bttn_37234 Template: one_bttn_37234", "pagina": "Emily Ward", "data_hora": "13/08/2026 00:00 BRT", "sucessos": 61, "falhas": 0, "status": "CONCLUÍDO"}], "relatorio_agrupado": [{"data_hora": "13/08/2026 06:00 BRT", "data_hora_iso": "2026-08-13T06:00:00", "campanhas": "Auto: one_bttn_46234 Template: one_bttn_46234 | Auto: new3_link_status_3 Template: new3_link_status_3 | Auto: one_bttn_22234 Template: one_bttn_22234 | Auto: one_bttn_40234 Template: one_bttn_40234 | Auto: new3_link_status_13 Template: new3_link_status_13 | Auto: new3_link_status_25 Template: new3_link_status_25 | Auto: moura_teste_42 Template: moura_teste_42 | Auto: one_bttn_34234 Template: one_bttn_34234", "paginas": "Faith Bell | Emily Ward | Ivy Watson | Ruby Mitchell | Veronica Collins | Aria Murphy | Ariana Ross | Lucy Richardson", "total_paginas": 8, "sucessos": 841, "falhas": 2, "status": "CONCLUÍDO", "ids": "#534082, #534083, #534088, #534086, #534089, #534085, #534087, #534084"}, {"data_hora": "13/08/2026 03:00 BRT", "data_hora_iso": "2026-08-13T03:00:00", "campanhas": "Auto: one_bttn_49234 Template: one_bttn_49234 | Auto: moura2_teste_17 Template: moura2_teste_17 | Auto: moura_teste_39 Template: moura_teste_39 | Auto: one_bttn_48234 Template: one_bttn_48234 | Auto: moura_teste_44 Template: moura_teste_44 | Auto: moura2_teste_12 Template: moura2_teste_12 | Auto: one_bttn_47234 Template: one_bttn_47234", "paginas": "Emily Ward | Faith Bell | Ivy Watson | Veronica Collins | Ariana Ross | Lucy Richardson | Aria Murphy | Ruby Mitchell", "total_paginas": 8, "sucessos": 843, "falhas": 3, "status": "CONCLUÍDO", "ids": "#533314, #533313, #533319, #533320, #533318, #533315, #533316, #533317"}, {"data_hora": "13/08/2026 00:00 BRT", "data_hora_iso": "2026-08-13T00:00:00", "campanhas": "Auto: one_bttn_22234 Template: one_bttn_22234 | Auto: moura_teste_34 Template: moura_teste_34 | Auto: new3_link_status_12 Template: new3_link_status_12 | Auto: one_bttn_47234 Template: one_bttn_47234 | Auto: joao_teste_10 Template: joao_teste_10 | Auto: joao_teste_23 Template: joao_teste_23 | Auto: moura_teste_31 Template: moura_teste_31 | Auto: one_bttn_37234 Template: one_bttn_37234", "paginas": "Ariana Ross | Veronica Collins | Ivy Watson | Ruby Mitchell | Lucy Richardson | Aria Murphy | Faith Bell | Emily Ward", "total_paginas": 8, "sucessos": 841, "falhas": 3, "status": "CONCLUÍDO", "ids": "#533122, #533124, #533123, #533121, #533119, #533120, #533117, #533118"}], "alertas_queda": []}];
+
+    function statusClass(status) {
+      const value = (status || '').toLowerCase();
+      if (value.includes('concl')) return 'concluido';
+      if (value.includes('pend')) return 'pendente';
+      return 'outro';
+    }
+
+    function parseBrDate(text) {
+      const value = (text || '').replace(/\s+/g, ' ').replace(/\s+BRT$/i, '').trim();
+      let match = value.match(/^([0-9]{2})\/([0-9]{2})\/([0-9]{4})\s+([0-9]{2}):([0-9]{2})$/);
+      if (match) {
+        const [, dd, mm, yyyy, hh, min] = match;
+        return new Date(`${yyyy}-${mm}-${dd}T${hh}:${min}:00`).getTime();
+      }
+
+      match = value.match(/^([0-9]{2})\/([0-9]{2})\s+([0-9]{2}):([0-9]{2})$/);
+      if (match) {
+        const [, dd, mm, hh, min] = match;
+        const currentYear = new Date().getFullYear();
+        return new Date(`${currentYear}-${mm}-${dd}T${hh}:${min}:00`).getTime();
+      }
+
+      return 0;
+    }
+
+    const totalCountries = data.length;
+    const okCountries = data.filter(item => !item.erro).length;
+    const totalRows = data.reduce((acc, item) => acc + ((item.historico || []).length), 0);
+    const totalGroupedRows = data.reduce((acc, item) => acc + ((item.relatorio_agrupado || []).length), 0);
+    const pendingRows = data.reduce((acc, item) => acc + ((item.historico || []).filter(row => (row.status || '').toLowerCase().includes('pend')).length), 0);
+    const completedRows = data.reduce((acc, item) => acc + ((item.historico || []).filter(row => (row.status || '').toLowerCase().includes('concl')).length), 0);
+    const alertRows = data.reduce((acc, item) => acc + ((item.alertas_queda || []).length), 0);
+    const lastRun = data.map(item => item.coletado_em).filter(Boolean).sort().reverse()[0];
+
+    document.getElementById('last-run').textContent = lastRun ? new Date(lastRun).toLocaleString('pt-BR') : '-';
+    document.getElementById('hero-kpis').innerHTML = `
+      <div class="hero-kpi">
+        <div class="label">Países monitorados</div>
+        <div class="value">${totalCountries}</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="label">Coletas ok</div>
+        <div class="value">${okCountries}</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="label">Broadcasts recentes</div>
+        <div class="value">${totalRows}</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="label">Pendentes / concluídos</div>
+        <div class="value">${pendingRows} / ${completedRows}</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="label">Horários agrupados</div>
+        <div class="value">${totalGroupedRows}</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="label">Alertas de queda</div>
+        <div class="value">${alertRows}</div>
+      </div>
+    `;
+
+    const container = document.getElementById('countries');
+    container.innerHTML = data.map(country => {
+      const metrics = Object.entries(country.cards || {}).map(([label, metric]) => `
+        <div class="metric">
+          <div class="label">${label}</div>
+          <div class="value">${metric.valor || '-'}</div>
+          <div class="detail">${metric.detalhe || ''}</div>
+        </div>
+      `).join('');
+
+      const timelineRows = [
+        ...(country.historico || []).map(item => ({
+          tipo: 'normal',
+          horario: item.agendado_br || '-',
+          sortValue: parseBrDate(item.agendado_br),
+          ids: item.id || '-',
+          campanha: item.campanha || '-',
+          paginas: item.pagina || '-',
+          status: item.status || '-',
+          detalhe_1: item.progresso || '-',
+          detalhe_2: `${item.entregabilidade || '-'}${item.percentual ? ` · ${item.percentual}` : ''}`,
+        })),
+        ...(country.relatorio_agrupado || []).map(item => ({
+          tipo: 'agrupado',
+          horario: item.data_hora || '-',
+          sortValue: parseBrDate(item.data_hora),
+          ids: item.ids || '-',
+          campanha: item.campanhas || '-',
+          paginas: item.paginas || '-',
+          status: item.status || '-',
+          detalhe_1: `${item.sucessos} sucessos · ${item.falhas} falhas`,
+          detalhe_2: `${item.total_paginas} paginas`,
+        })),
+      ].sort((a, b) => b.sortValue - a.sortValue);
+
+      const mergedRows = timelineRows.map(item => `
+        <tr>
+          <td>${item.horario}</td>
+          <td><span class="kind ${item.tipo}">${item.tipo === 'normal' ? 'Broadcast' : 'Agrupado'}</span></td>
+          <td class="muted">${item.ids}</td>
+          <td>${item.campanha}</td>
+          <td>${item.paginas}</td>
+          <td><span class="status ${statusClass(item.status)}">${item.status}</span></td>
+          <td>${item.detalhe_1}</td>
+          <td>${item.detalhe_2}</td>
+        </tr>
+      `).join('');
+
+      const alertasHtml = (country.alertas_queda || []).length
+        ? `
+            <div class="section-title">Alertas de Queda Brusca</div>
+            <div class="section-sub">Quando a mesma página cai muito de um horário para o outro, ela aparece aqui.</div>
+            <div class="alert-grid">
+              ${(country.alertas_queda || []).map(alerta => `
+                <div class="alert-box">
+                  <strong>${alerta.pagina}</strong>
+                  ${
+                    alerta.origem === 'agrupado'
+                      ? `
+                          <div>Comparativo agrupado: <b>${alerta.data_hora_anterior}</b> vs <b>${alerta.data_hora_atual}</b></div>
+                          <div>Sucessos: <b>${alerta.sucessos_anterior}</b> → <b>${alerta.sucessos_atual}</b> | Falhas atuais: <b>${alerta.falhas_atual}</b></div>
+                          <div>Campanhas: <b>${alerta.campanhas || '-'}</b></div>
+                          <div>Páginas no agrupado: <b>${alerta.total_paginas || '-'}</b> | IDs: <b>${alerta.ids || '-'}</b></div>
+                          <div>Alerta detectado: <b>${alerta.queda_absoluta}</b> (${alerta.queda_percentual}%)</div>
+                        `
+                      : `
+                          <div>${alerta.data_hora_anterior}: <b>${alerta.sucessos_anterior}</b> sucessos</div>
+                          <div>${alerta.data_hora_atual}: <b>${alerta.sucessos_atual}</b> sucessos e <b>${alerta.falhas_atual}</b> falhas</div>
+                          <div>Queda detectada: <b>${alerta.queda_absoluta}</b> envios (${alerta.queda_percentual}%)</div>
+                        `
+                  }
+                </div>
+              `).join('')}
+            </div>
+          `
+        : '';
+
+      const totalPendentes = (country.historico || []).filter(item => (item.status || '').toLowerCase().includes('pend')).length;
+      const totalConcluidos = (country.historico || []).filter(item => (item.status || '').toLowerCase().includes('concl')).length;
+      const totalAlertas = (country.alertas_queda || []).length;
+      const statusBadge = country.erro
+        ? `<span class="country-badge error">Erro na coleta</span>`
+        : `<span class="country-badge">OK · ${totalConcluidos} concluídos · ${totalPendentes} pendentes · ${totalAlertas} alertas</span>`;
+
+      const errorHtml = country.erro
+        ? `<div class="error-box">Falha nesta conta: ${country.erro}</div>`
+        : '';
+
+      return `
+        <article class="country">
+          <div class="country-head">
+            <div>
+              <h2>${country.pais}</h2>
+              <div class="meta">
+                <span>${country.email}</span>
+                <span>${new Date(country.coletado_em).toLocaleString('pt-BR')}</span>
+              </div>
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+          <div class="metrics">${metrics}</div>
+          ${errorHtml}
+          ${alertasHtml}
+          <div class="section-title">Linha do Tempo de Broadcasts</div>
+          <div class="section-sub">Broadcasts da tela principal e envios agrupados aparecem juntos, em uma lista unica ordenada por horario.</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Tipo</th>
+                  <th>ID / IDs</th>
+                  <th>Campanha</th>
+                  <th>Pagina / Paginas</th>
+                  <th>Status</th>
+                  <th>Detalhe 1</th>
+                  <th>Detalhe 2</th>
+                </tr>
+              </thead>
+              <tbody>${mergedRows}</tbody>
+            </table>
+          </div>
+        </article>
+      `;
+    }).join('');
+  </script>
+</body>
+</html>
